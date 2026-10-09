@@ -1,0 +1,245 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN") // ADMIN, SUPERADMIN, MODERATOR
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CommunityMember {
+  id               String   @id @default(cuid())
+  fullName         String
+  email            String   @unique
+  phone            String
+  college          String
+  degree           String
+  graduationYear   String
+  interests        String   // JSON stringified array of interests
+  linkedinUrl      String?
+  portfolioUrl     String?
+  reason           String?
+  membershipNumber String   @unique
+  status           String   @default("ACTIVE") // ACTIVE, PENDING, ALUMNI
+  createdAt        DateTime @default(now())
+}
+
+model Event {
+  id                    String                 @id @default(cuid())
+  title                 String
+  slug                  String                 @unique
+  description           String
+  shortDescription      String
+  category              String                 @default("TECH") // TECH, CULTURAL, SOCIAL, WORKSHOP, FEST
+  bannerUrl             String?
+  eventDate             DateTime
+  time                  String
+  venue                 String
+  mode                  String                 @default("OFFLINE") // OFFLINE, ONLINE, HYBRID
+  registrationLink      String?
+  volunteerCapacity     Int                    @default(15)
+  volunteerSlotsFilled  Int                    @default(0)
+  isFeatured            Boolean                @default(false)
+  isPublished           Boolean                @default(true)
+  deadline              DateTime?
+  requirements          String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  volunteerApplications VolunteerApplication[]
+}
+
+model VolunteerApplication {
+  id              String   @id @default(cuid())
+  eventId         String
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  fullName        String
+  email           String
+  phone           String
+  college         String
+  branchYear      String
+  skills          String
+  priorExperience String?
+  motivation      String
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt       DateTime @default(now())
+
+  @@unique([eventId, email])
+}
+
+model Opportunity {
+  id               String                   @id @default(cuid())
+  title            String
+  slug             String                   @unique
+  organization     String
+  category         String                   // INTERNSHIP, JOB, CAMPUS_AMBASSADOR, VOLUNTEERING, WORKSHOP, TALENT_SHOWCASE, LEADERSHIP, PROJECT, COLLABORATION
+  location         String
+  type             String                   @default("REMOTE") // REMOTE, ONSITE, HYBRID
+  stipendOrPerks   String
+  deadline         DateTime
+  eligibility      String
+  description      String
+  responsibilities String?
+  skillsRequired   String?
+  applicationLink  String?
+  isOpen           Boolean                  @default(true)
+  featured         Boolean                  @default(false)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  applications     OpportunityApplication[]
+}
+
+model OpportunityApplication {
+  id            String      @id @default(cuid())
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  fullName      String
+  email         String
+  phone         String
+  college       String
+  resumeUrl     String?
+  portfolioUrl  String?
+  coverNote     String?
+  status        String      @default("PENDING") // PENDING, UNDER_REVIEW, SHORTLISTED, ACCEPTED, REJECTED
+  referenceId   String      @unique
+  createdAt     DateTime    @default(now())
+}
+
+model TeamMember {
+  id               String   @id @default(cuid())
+  name             String
+  designation      String
+  department       String   // LEADERSHIP, TECH_DEV, EVENTS, CREATIVE_BAND, PR_OUTREACH, OPERATIONS
+  responsibilities String
+  bio              String?
+  photoUrl         String?
+  college          String?
+  linkedinUrl      String?
+  githubUrl        String?
+  instagramUrl     String?
+  orderIndex       Int      @default(0)
+  isActive         Boolean  @default(true)
+  isLeadership     Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Placement {
+  id             String   @id @default(cuid())
+  studentName    String
+  photoUrl       String?
+  college        String
+  degree         String
+  batchYear      String
+  company        String
+  companyLogoUrl String?
+  role           String
+  packageLpa     String
+  placementType  String   @default("FULL_TIME") // FULL_TIME, INTERNSHIP_PPO
+  verified       Boolean  @default(true)
+  testimonial    String?
+  createdAt      DateTime @default(now())
+}
+
+model Service {
+  id           String           @id @default(cuid())
+  name         String           @unique
+  slug         String           @unique
+  tagline      String
+  description  String
+  features     String           // JSON stringified array of feature points
+  iconName     String           @default("Layers")
+  bannerUrl    String?
+  contactEmail String?
+  contactPhone String?
+  leadPerson   String?
+  isActive     Boolean          @default(true)
+  enquiries    ServiceEnquiry[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model ServiceEnquiry {
+  id                    String    @id @default(cuid())
+  serviceId             String?
+  service               Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  serviceName           String
+  clientName            String
+  organizationOrCollege String?
+  email                 String
+  phone                 String
+  eventOrProjectDate    DateTime?
+  budget                String?
+  description           String
+  status                String    @default("NEW") // NEW, CONTACTED, IN_PROGRESS, COMPLETED
+  createdAt             DateTime  @default(now())
+}
+
+model OnlineMeeting {
+  id              String                @id @default(cuid())
+  title           String
+  topic           String
+  speakerName     String
+  speakerBio      String?
+  speakerPhotoUrl String?
+  scheduledAt     DateTime
+  durationMinutes Int                   @default(60)
+  maxParticipants Int                   @default(100)
+  registeredCount Int                   @default(0)
+  meetingUrl      String                // Private meeting link
+  platform        String                @default("ZOOM") // ZOOM, GOOGLE_MEET
+  zoomMeetingId   String?
+  zoomPassword    String?
+  isPublished     Boolean               @default(true)
+  status          String                @default("UPCOMING") // UPCOMING, LIVE, COMPLETED
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  registrations   MeetingRegistration[]
+}
+
+model MeetingRegistration {
+  id                  String        @id @default(cuid())
+  meetingId           String
+  meeting             OnlineMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  fullName            String
+  email               String
+  phone               String
+  college             String
+  attendanceConfirmed Boolean       @default(false)
+  accessCode          String        @unique
+  createdAt           DateTime      @default(now())
+
+  @@unique([meetingId, email])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String
+  phone     String?
+  topic     String   @default("GENERAL") // GENERAL, GUIDANCE_SUPPORT, SPONSORSHIP, BAND_BOOKING, PARTNERSHIP
+  subject   String
+  message   String
+  status    String   @default("UNREAD") // UNREAD, REPLIED, ARCHIVED
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  badgeText String   @default("ANNOUNCEMENT")
+  linkUrl   String?
+  isActive  Boolean  @default(true)
+  priority  Int      @default(0)
+  createdAt DateTime @default(now())
+}
